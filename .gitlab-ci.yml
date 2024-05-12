@@ -6,13 +6,25 @@
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 
-# container_scanning:
-#   variables:
-#     DOCKER_IMAGE: ...
-#     DOCKER_USER: ...
-#     DOCKER_PASSWORD: ...
+variables:
+  CONTAINER_IMAGE_NAME: helper-cls-cleanup
+
 stages:
+- build-docker
 - test
+
+# build docker image
+build-docker:
+  stage: build-docker
+  image:
+    name: gcr.io/kaniko-project/executor:latest
+    entrypoint: [""]
+  before_script: []
+  script:
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE/$CONTAINER_IMAGE_NAME:latest
+
+# security scanning
 sast:
   stage: test
 include:
