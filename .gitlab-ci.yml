@@ -8,6 +8,7 @@
 
 variables:
   CONTAINER_IMAGE_NAME: helper-cls-cleanup
+  CONTAINER_IMAGE_TAG: latest
 
 stages:
 - build-docker
@@ -22,11 +23,17 @@ build-docker:
   before_script: []
   script:
     - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"},\"$(echo -n $CI_DEPENDENCY_PROXY_SERVER | awk -F[:] '{print $1}')\":{\"auth\":\"$(printf "%s:%s" ${CI_DEPENDENCY_PROXY_USER} "${CI_DEPENDENCY_PROXY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/Dockerfile" --destination "$CI_REGISTRY_IMAGE/$CONTAINER_IMAGE_NAME:latest"
+    - /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/Dockerfile" --destination "$CI_REGISTRY_IMAGE/$CONTAINER_IMAGE_NAME:$CONTAINER_IMAGE_TAG"
 
 # security scanning
 sast:
   stage: test
+
+container_scanning:
+  variables: # which image and tag to scan
+    CI_APPLICATION_REPOSITORY: $CI_REGISTRY_IMAGE/$CONTAINER_IMAGE_NAME
+    CI_APPLICATION_TAG: $CONTAINER_IMAGE_TAG
+
 include:
 - template: Security/SAST.gitlab-ci.yml
 - template: Security/Dependency-Scanning.gitlab-ci.yml
