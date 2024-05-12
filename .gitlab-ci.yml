@@ -12,11 +12,11 @@
 #     DOCKER_USER: ...
 #     DOCKER_PASSWORD: ...
 stages:
-- test
 - scan
 sast:
   stage: scan
 include:
 - template: Security/SAST.gitlab-ci.yml
+- template: Security/Dependency-Scanning.gitlab-ci.yml
 - template: Security/Secret-Detection.gitlab-ci.yml
 - template: Jobs/Container-Scanning.gitlab-ci.yml
