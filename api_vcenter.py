@@ -50,41 +50,6 @@ class VCAPI:
         if insecure:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    # Login/Logout
-    def login(self) -> bool:
-        """
-        Authenticate to the vCenter API.
-        :return: True if the login was successful, False otherwise
-        """
-        log('info', 'Authenticating to vCenter as {}...'.format(self.username))
-        api_url = 'https://{}/api/session'.format(self.hostname)
-        resp = requests.post(api_url, auth=(self.username, self.password), verify=(not self.insecure_ssl))
-        if resp.status_code != 201:
-            log('error', 'Error occurred. API response: [{}] {}'.format(resp.status_code, resp.text))
-            return False
-
-        log('debug', ' Authenticated to vCenter.')
-        self.session_id = resp.json()
-        return True
-
-    def logout(self) -> bool:
-        """
-        Logout from the vCenter API.
-        :return: True if the logout was successful, False otherwise
-        """
-        log('info', 'Logging out from vCenter...')
-
-        api_url = 'https://{}/api/session'.format(self.hostname)
-        log('debug', '- Contacting API: {}'.format(api_url))
-        resp = requests.delete(api_url, verify=(not self.insecure_ssl),
-                               headers={'vmware-api-session-id': self.session_id})
-        if resp.status_code != 204:
-            log('error', 'Error occurred. API response: [{}] {}'.format(resp.status_code, resp.text))
-            return False
-
-        log('debug', ' Logged out from vCenter.')
-        return True
-
     # Generic API functions
     def get(self, req_url: str, payload: dict = None) -> dict or None:
         """
@@ -121,7 +86,42 @@ class VCAPI:
             return
         return resp.json()
 
-    # vCenter-specific functions
+    # Login/Logout
+    def login(self) -> bool:
+        """
+        Authenticate to the vCenter API.
+        :return: True if the login was successful, False otherwise
+        """
+        log('info', 'Authenticating to vCenter as {}...'.format(self.username))
+        api_url = 'https://{}/api/session'.format(self.hostname)
+        resp = requests.post(api_url, auth=(self.username, self.password), verify=(not self.insecure_ssl))
+        if resp.status_code != 201:
+            log('error', 'Error occurred. API response: [{}] {}'.format(resp.status_code, resp.text))
+            return False
+
+        log('debug', ' Authenticated to vCenter.')
+        self.session_id = resp.json()
+        return True
+
+    def logout(self) -> bool:
+        """
+        Logout from the vCenter API.
+        :return: True if the logout was successful, False otherwise
+        """
+        log('info', 'Logging out from vCenter...')
+
+        api_url = 'https://{}/api/session'.format(self.hostname)
+        log('debug', '- Contacting API: {}'.format(api_url))
+        resp = requests.delete(api_url, verify=(not self.insecure_ssl),
+                               headers={'vmware-api-session-id': self.session_id})
+        if resp.status_code != 204:
+            log('error', 'Error occurred. API response: [{}] {}'.format(resp.status_code, resp.text))
+            return False
+
+        log('debug', ' Logged out from vCenter.')
+        return True
+
+    # Content Library-specific functions for vCenter
     def get_library_id(self, name: str) -> str or None:
         """
         Get the ID of a Content Library by its name.
@@ -212,6 +212,6 @@ class VCAPI:
         return cls_templates
 
 
-# Instance
+# Wrapper function to create an instance of the VCAPI class
 def create(api_host, api_user, api_pass):
     return VCAPI(api_host, api_user, api_pass)
