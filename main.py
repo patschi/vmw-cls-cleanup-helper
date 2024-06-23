@@ -4,7 +4,7 @@ from os import environ
 
 from logger import log
 import api_vcenter
-import template_data
+import cldata
 
 # Version
 VERSION = [0, 3, 0]
@@ -34,7 +34,7 @@ if '__main__' == __name__:
             log('error', 'Error occurred while retrieving Content Library templates.')
 
         # Use templates_data to convert the templates further
-        data = template_data.convert(templates)
+        data = cldata.convert(templates)
 
     except Exception as e:
         # Catch any exceptions and logout of VC
