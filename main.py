@@ -2,12 +2,12 @@
 import traceback
 from os import environ
 
-from logger import log, debug
 import api_vcenter
 import cldata
+from logger import log, debug
 
 # Version
-VERSION = [0, 3, 0]
+VERSION = [0, 3, 1]
 
 # Settings
 api_host = environ.get('PKR_VAR_vsphere_endpoint')

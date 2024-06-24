@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+from dataclasses import dataclass
 from datetime import datetime
-from logger import log
+
 import requests
 import urllib3.exceptions
-from dataclasses import dataclass
+
+from logger import log
 
 
 # Template Object

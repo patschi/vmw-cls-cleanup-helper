@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import re
 
-from logger import log
 from api_vcenter import CLTemplate
+from logger import log
 
 
 def extract_by_name(template: CLTemplate) -> tuple[str, CLTemplate]:
