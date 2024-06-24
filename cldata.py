@@ -12,14 +12,14 @@ def extract_by_name(template: CLTemplate) -> tuple[str, CLTemplate]:
     :return: A tuple containing the extracted name and the template object
     """
     # Get the name (without the unique timestamp)
-    match = re.match(r"(.+?) \((\d+)\)", template.name)
+    match = re.match(pattern=r"(.+?) \((\d+)\)", string=template.name)
     name = match.group(1).replace("_", " ").strip()
     log('debug', ' Extracted name found: {}'.format(name))
     # Return the name and template object
     return name, template
 
 
-def merge_by_name(templates: dict):
+def merge_by_name(templates: dict) -> dict[str, list[CLTemplate]]:
     """
     Helper function to merge the extracted templates by name.
     :param templates: The list of templates to merge
@@ -34,6 +34,7 @@ def merge_by_name(templates: dict):
         # Merge the extracted data with the existing list
         if extract[0] not in extracted_templates:
             extracted_templates[extract[0]] = []
+        # Append the template to the list
         extracted_templates[extract[0]].append(extract[1])
 
     # The final data is now structured like:
@@ -58,7 +59,7 @@ def sort_by_creation_date(templates: dict[str, list[CLTemplate]]) -> dict[str, l
     return templates
 
 
-def convert(templates: dict) -> list[tuple[str, CLTemplate]]:
+def convert(templates: dict) -> dict[str, list[CLTemplate]]:
     """
     Main function to take care about data conversion. Convert the templates to a list of tuples.
     :param templates: The list of templates to convert

@@ -20,8 +20,8 @@ if '__main__' == __name__:
     log('info', 'Starting vmw-cls-cleanup {}...'.format('.'.join(map(str, VERSION))))
 
     # Create an instance of the vCenter API
-    api = api_vcenter.create(api_host, api_user, api_pass)
-    api.allow_insecure_ssl(True)
+    api = api_vcenter.create(api_host=api_host, api_user=api_user, api_pass=api_pass)
+    api.allow_insecure_ssl(insecure=True)
     try:
         login = api.login()
         if not login:
@@ -29,7 +29,7 @@ if '__main__' == __name__:
             exit(1)
 
         # Get all templates
-        templates = api.get_cls_templates(content_library)
+        templates = api.get_cls_templates(library=content_library)
         if templates is None:
             log('error', 'Error occurred while retrieving Content Library templates.')
 

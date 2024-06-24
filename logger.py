@@ -18,7 +18,7 @@ debug = environ.get('CLEANUP_SCRIPT_DEBUG', 'false').lower() == 'true'
 
 
 # Basic logging function
-def log(severity: str, msg: str):
+def log(severity: str, msg: str) -> None:
     """
     Basic logging function. Prints a message with a timestamp and severity level.
     :param severity: The severity level of the message (info, warning, error)

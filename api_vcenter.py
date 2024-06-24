@@ -32,7 +32,12 @@ class VCAPI:
     """Class to interact with the vCenter API."""
 
     def __init__(self, hostname: str, username: str, password: str):
-        """Class initialization. Sets up the vCenter API connection."""
+        """
+        Class initialization. Sets up object for the vCenter API connection.
+        :param hostname: The hostname of the vCenter server
+        :param username: The username to authenticate
+        :param password: The password to authenticate
+        """
         self.hostname = hostname
         self.username = username
         self.password = password
@@ -48,29 +53,29 @@ class VCAPI:
         """
         self.insecure_ssl = insecure
         if insecure:
-            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
 
     # Generic API functions
-    def get(self, req_url: str, payload: dict = None) -> dict or None:
+    def get(self, path: str, payload: dict = None) -> dict or None:
         """
         Generic GET function to contact the vCenter API.
-        :param req_url: The API endpoint to contact
+        :param path: The API endpoint to contact
         :param payload: The payload to send
         :return: The JSON response from the API
         """
-        req_url = 'https://{}/api/{}'.format(self.hostname, req_url)
-        log('debug', '- Contacting API {1} with payload {0}...'.format(payload, req_url))
-        resp = requests.get(req_url, verify=(not self.insecure_ssl), params=payload,
+        url = 'https://{}/api/{}'.format(self.hostname, path)
+        log('debug', '- Contacting API {1} with payload {0}...'.format(payload, url))
+        resp = requests.get(url=url, verify=(not self.insecure_ssl), params=payload,
                             headers={'vmware-api-session-id': self.session_id})
         if resp.status_code != 200:
             log('error', 'Error! API responded with: {}'.format(resp.status_code))
             return None
         return resp.json()
 
-    def post(self, req_url: str, payload: dict = None) -> dict or None:
+    def post(self, path: str, payload: dict = None) -> dict or None:
         """
         Generic POST function to contact the vCenter API.
-        :param req_url: The API endpoint to contact
+        :param path: The API endpoint to contact
         :param payload: The payload to send
         :return: The JSON response from the API
         """
@@ -78,9 +83,9 @@ class VCAPI:
             'content-type': 'application/json',
             'vmware-api-session-id': self.session_id
         }
-        req_url = 'https://{}/api/{}'.format(self.hostname, req_url)
-        log('debug', '- Contacting API {1} with payload {0}...'.format(payload, req_url))
-        resp = requests.post(req_url, verify=(not self.insecure_ssl), json=payload, headers=headers)
+        url = 'https://{}/api/{}'.format(self.hostname, path)
+        log('debug', '- Contacting API {1} with payload {0}...'.format(payload, url))
+        resp = requests.post(url=url, verify=(not self.insecure_ssl), json=payload, headers=headers)
         if resp.status_code != 200:
             log('error', 'Error! API responded with: {}'.format(resp.status_code))
             return
@@ -94,7 +99,7 @@ class VCAPI:
         """
         log('info', 'Authenticating to vCenter as {}...'.format(self.username))
         api_url = 'https://{}/api/session'.format(self.hostname)
-        resp = requests.post(api_url, auth=(self.username, self.password), verify=(not self.insecure_ssl))
+        resp = requests.post(url=api_url, auth=(self.username, self.password), verify=(not self.insecure_ssl))
         if resp.status_code != 201:
             log('error', 'Error occurred. API response: [{}] {}'.format(resp.status_code, resp.text))
             return False
@@ -112,7 +117,7 @@ class VCAPI:
 
         api_url = 'https://{}/api/session'.format(self.hostname)
         log('debug', '- Contacting API: {}'.format(api_url))
-        resp = requests.delete(api_url, verify=(not self.insecure_ssl),
+        resp = requests.delete(url=api_url, verify=(not self.insecure_ssl),
                                headers={'vmware-api-session-id': self.session_id})
         if resp.status_code != 204:
             log('error', 'Error occurred. API response: [{}] {}'.format(resp.status_code, resp.text))
@@ -128,7 +133,7 @@ class VCAPI:
         :param name: The name of the Content Library
         :return: The ID of the Content Library
         """
-        library_id = self.post('content/library?action=find', {'name': name, 'type': 'LOCAL'})
+        library_id = self.post(path='content/library?action=find', payload={'name': name, 'type': 'LOCAL'})
         if len(library_id) != 1:
             log('error', 'Error! Found {} Content Libraries with the name {}. Must be unambiguously. Exiting...'
                 .format(len(library_id), name))
@@ -143,7 +148,7 @@ class VCAPI:
         :return: The list of items in the Content Library
         """
         log('debug', 'Retrieving items in Content Library with ID {}...'.format(library_id))
-        return self.get('content/library/item', payload={'library_id': library_id})
+        return self.get(path='content/library/item', payload={'library_id': library_id})
 
     def get_library_item_metadata(self, item_id: str) -> dict or None:
         """
@@ -152,7 +157,7 @@ class VCAPI:
         :return: The metadata for the Content Library item as dict
         """
         log('debug', 'Retrieving metadata for Content Library item {}...'.format(item_id))
-        return self.get('content/library/item/{}'.format(item_id))
+        return self.get(path='content/library/item/{}'.format(item_id))
 
     def delete_library_item(self, item_id: str) -> bool:
         """
@@ -161,15 +166,16 @@ class VCAPI:
         :return: True if the deletion was successful, False otherwise
         """
         log('debug', 'Deleting Content Library item {}...'.format(item_id))
-        return self.post('content/library/item/{}/action/delete'.format(item_id), {})
+        return self.post(path='content/library/item/{}/action/delete'.format(item_id), payload={})
 
     def get_cls_templates(self, library: str) -> dict or None:
         """
         The main cleanup function. This function will go through the Content Library and delete all outdated items.
+        :param library: The name of the Content Library
         :return: The list of Content Library items as dict
         """
         # Get Content Library ID and check if we only have one identical match
-        clid = self.get_library_id(library)
+        clid = self.get_library_id(name=library)
         if clid is None:
             log('error', 'Error! Error occurred while retrieving Content Library ID.')
             return
@@ -178,7 +184,7 @@ class VCAPI:
 
         # Get all items in the Content Library
         log('info', 'Retrieving items in Content Library with ID {}...'.format(clid))
-        cl_items = self.get_library_items(clid)
+        cl_items = self.get_library_items(library_id=clid)
 
         # Check if we have any items in the Content Library
         if cl_items is None:
@@ -194,7 +200,7 @@ class VCAPI:
         for item in cl_items:
             log('debug', ' Library-Item: {}'.format(item))
 
-            metadata = self.get_library_item_metadata(item)
+            metadata = self.get_library_item_metadata(item_id=item)
             if metadata is None:
                 log('warning', 'Error! Could not retrieve metadata for item {}. Skipping...'.format(item))
                 continue
@@ -212,6 +218,13 @@ class VCAPI:
         return cls_templates
 
 
-# Wrapper function to create an instance of the VCAPI class
-def create(api_host, api_user, api_pass):
-    return VCAPI(api_host, api_user, api_pass)
+# Wrapper
+def create(api_host, api_user, api_pass) -> VCAPI:
+    """
+    Wrapper function to create an instance of the VCAPI class.
+    :param api_host: The hostname of the vCenter server
+    :param api_user: The username to authenticate
+    :param api_pass: The password to authenticate
+    :return: An instance of the VCAPI class
+    """
+    return VCAPI(hostname=api_host, username=api_user, password=api_pass)
