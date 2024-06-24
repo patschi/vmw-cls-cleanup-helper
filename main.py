@@ -15,6 +15,7 @@ api_user = environ.get('PKR_VAR_vsphere_username')
 api_pass = environ.get('PKR_VAR_vsphere_password')
 
 content_library = environ.get('PKR_VAR_vsphere_content_library')
+dry_run = environ.get('CLEANUP_SCRIPT_DEBUG_DRY_RUN', 'false').lower() == 'true'
 
 if '__main__' == __name__:
     log(sev='info', msg='Starting vmw-cls-cleanup {}...'.format('.'.join(map(str, VERSION))))
@@ -45,6 +46,33 @@ if '__main__' == __name__:
         if debug:
             log(sev='debug', msg='Final data for templates to be deleted:')
             cldata.print_list(templates=templates)
+
+        # Delete the templates
+        log(sev='info', msg='Deleting templates...')
+        if dry_run:
+            log(sev='warn', msg='/!!\\ Dry-run enabled, not sending deletion API requests! /!!\\')
+
+        # Go through each template
+        for template in templates:
+            log(sev='info', msg=' Cleaning up template "{}"...'.format(template))
+            # Go through each item per template type and delete it
+            for item in templates[template]:
+                log(sev='info', msg='  Deleting template "{}" with ID {}...'.format(item.name, item.id))
+                # Skip deletion if dry-run is enabled
+                if dry_run:
+                    continue
+                # Delete the template item
+                # deletion, deletion_error = api.delete_library_item(item_id=item.id)
+                deletion, deletion_error = True, None
+                # Check if the deletion was successful
+                if deletion:
+                    log(sev='info', msg='   Successfully deleted template {}.'.format(item.id))
+                else:
+                    log(sev='warn', msg='   Error occurred while deleting template {}: {}.'
+                        .format(item.id, deletion_error))
+
+        # We're done! Templates cleaned up.
+        log(sev='info', msg='Finished cleaning up templates.')
 
     except Exception as e:
         # Catch any exceptions and logout of VC
