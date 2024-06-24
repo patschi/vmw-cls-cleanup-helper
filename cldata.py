@@ -64,6 +64,7 @@ def convert(templates: dict) -> list[tuple[str, CLTemplate]]:
     :param templates: The list of templates to convert
     :return: The converted and processed list of templates in form of a list of tuples: (name, [CLTemplate, ...])
     """
+    log('debug', 'Converting template data...')
     # Extract the name and date from the template name
     data = merge_by_name(templates)
     # Sort the templates by creation date
