@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import re
 
-from logger import log, debug
+from logger import log
 from api_vcenter import CLTemplate
 
 
@@ -67,16 +67,42 @@ def convert(templates: dict) -> dict[str, list[CLTemplate]]:
     """
     log('debug', 'Converting template data...')
     # Extract the name and date from the template name
-    data = merge_by_name(templates)
+    data = merge_by_name(templates=templates)
     # Sort the templates by creation date
-    data = sort_by_creation_date(data)
-    # Output data if debug is enabled
-    if debug:
-        log('debug', 'Final data:')
-        for name in data:
-            log('debug', ' Name: {}'.format(name))
-            for template in data[name]:
-                creation_date = template.creation_time.strftime('%Y-%m-%d %H:%M:%S %Z')
-                log('debug', '  Template: {} / CreationTime: {}'.format(template.name, creation_date))
+    data = sort_by_creation_date(templates=data)
     # Return the final data
     return data
+
+
+def templates_to_delete(templates: dict[str, list[CLTemplate]], keep: int) -> dict[str, list[CLTemplate]]:
+    """
+    Function to determine which templates to delete based on the number of templates to keep.
+    :param templates: The list of templates to process
+    :param keep: The number of templates to keep
+    :return: The list of templates to delete
+    """
+    log('debug', 'Determining templates to delete...')
+    # Delete the first x templates based on the 'keep' value
+    # To keep them, we need to delete the amount we want to keep from the top of the list
+    # This is because the list is sorted by creation date, newest first.
+    for name in templates:
+        len_old = len(templates[name])
+        if len_old > keep:
+            del templates[name][:keep]
+            log('debug', ' Keeping {} templates for "{}" [before: {}, after: {}].'
+                .format(keep, name, len_old, len(templates[name])))
+
+    # Return the list of templates to delete
+    return templates
+
+
+def print_list(templates: dict[str, list[CLTemplate]]) -> None:
+    """
+    Helper function to print the list of templates.
+    :param templates: The list of templates to print
+    """
+    for name in templates:
+        log('debug', ' Name: {}'.format(name))
+        for template in templates[name]:
+            creation_date = template.creation_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+            log('debug', '  Template: {} / CreationTime: {}'.format(template.name, creation_date))

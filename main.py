@@ -2,7 +2,7 @@
 import traceback
 from os import environ
 
-from logger import log
+from logger import log, debug
 import api_vcenter
 import cldata
 
@@ -34,7 +34,17 @@ if '__main__' == __name__:
             log('error', 'Error occurred while retrieving Content Library templates.')
 
         # Use templates_data to convert the templates further
-        data = cldata.convert(templates)
+        data = cldata.convert(templates=templates)
+        # Output all templates if debug is enabled
+        if debug:
+            log('debug', 'Final data:')
+            cldata.print_list(templates=data)
+
+        # Output the templates to be deleted, if debug is enabled
+        data = cldata.templates_to_delete(templates=data, keep=1)
+        if debug:
+            log('debug', 'Final data for templates to be deleted:')
+            cldata.print_list(templates=data)
 
     except Exception as e:
         # Catch any exceptions and logout of VC
