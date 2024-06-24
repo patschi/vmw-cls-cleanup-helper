@@ -14,7 +14,7 @@ def extract_by_name(template: CLTemplate) -> tuple[str, CLTemplate]:
     # Get the name (without the unique timestamp)
     match = re.match(pattern=r"(.+?) \((\d+)\)", string=template.name)
     name = match.group(1).replace("_", " ").strip()
-    log('debug', ' Extracted name found: {}'.format(name))
+    log(sev='debug', msg=' Extracted name found: {}'.format(name))
     # Return the name and template object
     return name, template
 
@@ -25,7 +25,7 @@ def merge_by_name(templates: dict) -> dict[str, list[CLTemplate]]:
     :param templates: The list of templates to merge
     :return: The merged list of templates grouped by extracted name
     """
-    log('debug', 'Merging templates by name...')
+    log(sev='debug', msg='Merging templates by name...')
     # Extract the name and date from the template name
     extracted_templates = {}
     for template in templates:
@@ -40,7 +40,7 @@ def merge_by_name(templates: dict) -> dict[str, list[CLTemplate]]:
     # The final data is now structured like:
     # {'name1': [CLTemplate, ...], ..., 'name2': [CLTemplate, ...]}
 
-    log('debug', 'Merging complete: {} unique templates found, {} total templates.'
+    log(sev='debug', msg='Merging complete: {} unique templates found, {} total templates.'
         .format(len(extracted_templates), len(templates)))
     return extracted_templates
 
@@ -51,7 +51,7 @@ def sort_by_creation_date(templates: dict[str, list[CLTemplate]]) -> dict[str, l
     :param templates: The list of templates to sort
     :return: The sorted list of templates
     """
-    log('debug', 'Sorting templates by creation date...')
+    log(sev='debug', msg='Sorting templates by creation date...')
     # Sort the templates by creation date; newest first.
     for template in templates:
         templates[template].sort(key=lambda x: x.creation_time, reverse=True)
@@ -65,7 +65,7 @@ def convert(templates: dict) -> dict[str, list[CLTemplate]]:
     :param templates: The list of templates to convert
     :return: The converted and processed list of templates in form of a list of tuples: (name, [CLTemplate, ...])
     """
-    log('debug', 'Converting template data...')
+    log(sev='debug', msg='Converting template data...')
     # Extract the name and date from the template name
     data = merge_by_name(templates=templates)
     # Sort the templates by creation date
@@ -81,7 +81,7 @@ def templates_to_delete(templates: dict[str, list[CLTemplate]], keep: int) -> di
     :param keep: The number of templates to keep
     :return: The list of templates to delete
     """
-    log('debug', 'Determining templates to delete...')
+    log(sev='info', msg='Determining templates to delete...')
     # Delete the first x templates based on the 'keep' value
     # To keep them, we need to delete the amount we want to keep from the top of the list
     # This is because the list is sorted by creation date, newest first.
@@ -89,7 +89,7 @@ def templates_to_delete(templates: dict[str, list[CLTemplate]], keep: int) -> di
         len_old = len(templates[name])
         if len_old > keep:
             del templates[name][:keep]
-            log('debug', ' Keeping {} templates for "{}" [before: {}, after: {}].'
+            log(sev='info', msg=' Keeping {} templates for "{}" [before: {}, after: {}].'
                 .format(keep, name, len_old, len(templates[name])))
 
     # Return the list of templates to delete
@@ -102,7 +102,8 @@ def print_list(templates: dict[str, list[CLTemplate]]) -> None:
     :param templates: The list of templates to print
     """
     for name in templates:
-        log('debug', ' Name: {}'.format(name))
+        log(sev='debug', msg=' Name: {} [{}]'.format(name, len(templates[name])))
         for template in templates[name]:
             creation_date = template.creation_time.strftime('%Y-%m-%d %H:%M:%S %Z')
-            log('debug', '  Template: {} / CreationTime: {}'.format(template.name, creation_date))
+            log(sev='debug', msg='  Template: {} / CreationTime: {}'
+                .format(template.name, creation_date))

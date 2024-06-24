@@ -58,7 +58,7 @@ class VCAPI:
             urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
 
     # Generic API functions
-    def get(self, path: str, payload: dict = None) -> dict or None:
+    def get(self, path: str, payload: dict = None) -> (bool, dict or str):
         """
         Generic GET function to contact the vCenter API.
         :param path: The API endpoint to contact
@@ -66,15 +66,15 @@ class VCAPI:
         :return: The JSON response from the API
         """
         url = 'https://{}/api/{}'.format(self.hostname, path)
-        log('debug', '- Contacting API {1} with payload {0}...'.format(payload, url))
+        log(sev='debug', msg='- Contacting API {1} with payload {0}...'.format(payload, url))
         resp = requests.get(url=url, verify=(not self.insecure_ssl), params=payload,
                             headers={'vmware-api-session-id': self.session_id})
         if resp.status_code != 200:
-            log('error', 'Error! API responded with: {}'.format(resp.status_code))
-            return None
-        return resp.json()
+            log(sev='error', msg='Error! API responded with: {}'.format(resp.status_code))
+            return False, resp.text
+        return True, resp.json()
 
-    def post(self, path: str, payload: dict = None) -> dict or None:
+    def post(self, path: str, payload: dict = None) -> (bool, dict or str):
         """
         Generic POST function to contact the vCenter API.
         :param path: The API endpoint to contact
@@ -86,12 +86,12 @@ class VCAPI:
             'vmware-api-session-id': self.session_id
         }
         url = 'https://{}/api/{}'.format(self.hostname, path)
-        log('debug', '- Contacting API {1} with payload {0}...'.format(payload, url))
+        log(sev='debug', msg='- Contacting API {1} with payload {0}...'.format(payload, url))
         resp = requests.post(url=url, verify=(not self.insecure_ssl), json=payload, headers=headers)
         if resp.status_code != 200:
-            log('error', 'Error! API responded with: {}'.format(resp.status_code))
-            return
-        return resp.json()
+            log(sev='error', msg='Error! API responded with: {}'.format(resp.status_code))
+            return False, resp.text
+        return True, resp.json()
 
     # Login/Logout
     def login(self) -> bool:
@@ -99,14 +99,15 @@ class VCAPI:
         Authenticate to the vCenter API.
         :return: True if the login was successful, False otherwise
         """
-        log('info', 'Authenticating to vCenter as {}...'.format(self.username))
+        log(sev='info', msg='Authenticating to vCenter as {}...'.format(self.username))
         api_url = 'https://{}/api/session'.format(self.hostname)
         resp = requests.post(url=api_url, auth=(self.username, self.password), verify=(not self.insecure_ssl))
         if resp.status_code != 201:
-            log('error', 'Error occurred. API response: [{}] {}'.format(resp.status_code, resp.text))
+            log(sev='error', msg='Error occurred. API response: [{}] {}'
+                .format(resp.status_code, resp.text))
             return False
 
-        log('debug', ' Authenticated to vCenter.')
+        log(sev='debug', msg=' Authenticated to vCenter.')
         self.session_id = resp.json()
         return True
 
@@ -115,17 +116,18 @@ class VCAPI:
         Logout from the vCenter API.
         :return: True if the logout was successful, False otherwise
         """
-        log('info', 'Logging out from vCenter...')
+        log(sev='info', msg='Logging out from vCenter...')
 
         api_url = 'https://{}/api/session'.format(self.hostname)
-        log('debug', '- Contacting API: {}'.format(api_url))
+        log(sev='debug', msg='- Contacting API: {}'.format(api_url))
         resp = requests.delete(url=api_url, verify=(not self.insecure_ssl),
                                headers={'vmware-api-session-id': self.session_id})
         if resp.status_code != 204:
-            log('error', 'Error occurred. API response: [{}] {}'.format(resp.status_code, resp.text))
+            log(sev='error', msg='Error occurred. API response: [{}] {}'
+                .format(resp.status_code, resp.text))
             return False
 
-        log('debug', ' Logged out from vCenter.')
+        log(sev='debug', msg=' Logged out from vCenter.')
         return True
 
     # Content Library-specific functions for vCenter
@@ -135,9 +137,11 @@ class VCAPI:
         :param name: The name of the Content Library
         :return: The ID of the Content Library
         """
-        library_id = self.post(path='content/library?action=find', payload={'name': name, 'type': 'LOCAL'})
+        success, library_id = self.post(path='content/library?action=find', payload={'name': name, 'type': 'LOCAL'})
+        if not success:
+            return None
         if len(library_id) != 1:
-            log('error', 'Error! Found {} Content Libraries with the name {}. Must be unambiguously. Exiting...'
+            log(sev='error', msg='Error! Found {} Content Libraries with the name {}. Must be unambiguously. Exiting...'
                 .format(len(library_id), name))
             return None
         # We have only one match, so easy to pick the right one
@@ -149,8 +153,11 @@ class VCAPI:
         :param library_id: The ID of the Content Library
         :return: The list of items in the Content Library
         """
-        log('debug', 'Retrieving items in Content Library with ID {}...'.format(library_id))
-        return self.get(path='content/library/item', payload={'library_id': library_id})
+        log(sev='debug', msg='Retrieving items in Content Library with ID {}...'.format(library_id))
+        success, output = self.get(path='content/library/item', payload={'library_id': library_id})
+        if not success:
+            return None
+        return output
 
     def get_library_item_metadata(self, item_id: str) -> dict or None:
         """
@@ -158,17 +165,23 @@ class VCAPI:
         :param item_id: The ID of the Content
         :return: The metadata for the Content Library item as dict
         """
-        log('debug', 'Retrieving metadata for Content Library item {}...'.format(item_id))
-        return self.get(path='content/library/item/{}'.format(item_id))
+        log(sev='debug', msg='Retrieving metadata for Content Library item {}...'.format(item_id))
+        success, output = self.get(path='content/library/item/{}'.format(item_id))
+        if not success:
+            return None
+        return output
 
-    def delete_library_item(self, item_id: str) -> bool:
+    def delete_library_item(self, item_id: str) -> bool or str:
         """
         Delete a Content Library item.
         :param item_id: The ID of the Content Library item
-        :return: True if the deletion was successful, False otherwise
+        :return: True if the deletion was successful, string otherwise
         """
-        log('debug', 'Deleting Content Library item {}...'.format(item_id))
-        return self.post(path='content/library/item/{}/action/delete'.format(item_id), payload={})
+        log(sev='debug', msg='Deleting Content Library item {}...'.format(item_id))
+        success, output = self.post(path='content/library/item/{}/action/delete'.format(item_id), payload={})
+        if not success:
+            return output
+        return True
 
     def get_cls_templates(self, library: str) -> dict or None:
         """
@@ -179,32 +192,32 @@ class VCAPI:
         # Get Content Library ID and check if we only have one identical match
         clid = self.get_library_id(name=library)
         if clid is None:
-            log('error', 'Error! Error occurred while retrieving Content Library ID.')
+            log(sev='error', msg='Error! Error occurred while retrieving Content Library ID.')
             return
 
-        log('info', 'Content Library ID for "{}" is: {}'.format(library, clid))
+        log(sev='info', msg='Content Library ID for "{}" is: {}'.format(library, clid))
 
         # Get all items in the Content Library
-        log('info', 'Retrieving items in Content Library with ID {}...'.format(clid))
+        log(sev='info', msg='Retrieving items in Content Library with ID {}...'.format(clid))
         cl_items = self.get_library_items(library_id=clid)
 
         # Check if we have any items in the Content Library
         if cl_items is None:
-            log('error', 'Error! Error occurred while retrieving Content Library items.')
+            log(sev='error', msg='Error! Error occurred while retrieving Content Library items.')
             return
 
         if len(cl_items) == 0:
-            log('error', 'No items found in Content Library.')
+            log(sev='error', msg='No items found in Content Library.')
             return
 
         # Go through the items and get metadata for each
         cls_templates = {}
         for item in cl_items:
-            log('debug', ' Library-Item: {}'.format(item))
+            log(sev='debug', msg=' Library-Item: {}'.format(item))
 
             metadata = self.get_library_item_metadata(item_id=item)
             if metadata is None:
-                log('warning', 'Error! Could not retrieve metadata for item {}. Skipping...'.format(item))
+                log(sev='warning', msg='Error! Could not retrieve metadata for item {}. Skipping...'.format(item))
                 continue
 
             # Convert some metadata to datetime objects
@@ -215,7 +228,8 @@ class VCAPI:
             # Create a CLTemplate object from the metadata
             metadata = CLTemplate(**metadata)
             cls_templates[item] = metadata
-            log('debug', '  Name: {} / CreationTime: {}'.format(metadata.name, metadata.creation_time))
+            log(sev='debug', msg='  Name: {} / CreationTime: {}'
+                .format(metadata.name, metadata.creation_time))
 
         return cls_templates
 
