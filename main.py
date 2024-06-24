@@ -62,14 +62,16 @@ if '__main__' == __name__:
                 if dry_run:
                     continue
                 # Delete the template item
-                # deletion, deletion_error = api.delete_library_item(item_id=item.id)
-                deletion, deletion_error = True, None
+                deletion, deletion_error = api.delete_library_item(item_id=item.id)
                 # Check if the deletion was successful
                 if deletion:
                     log(sev='info', msg='   Successfully deleted template {}.'.format(item.id))
                 else:
                     log(sev='warn', msg='   Error occurred while deleting template {}: {}.'
                         .format(item.id, deletion_error))
+
+                ### TEST ONLY ###
+                raise Exception('ONE TEMPLATE DELETED - TEST END')
 
         # We're done! Templates cleaned up.
         log(sev='info', msg='Finished cleaning up templates.')

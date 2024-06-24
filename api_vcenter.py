@@ -58,7 +58,7 @@ class VCAPI:
             urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
 
     # Generic API functions
-    def get(self, path: str, payload: dict = None) -> (bool, dict or str):
+    def get(self, path: str, payload: dict = None) -> (bool, int, dict or str):
         """
         Generic GET function to contact the vCenter API.
         :param path: The API endpoint to contact
@@ -66,15 +66,21 @@ class VCAPI:
         :return: The JSON response from the API
         """
         url = 'https://{}/api/{}'.format(self.hostname, path)
-        log(sev='debug', msg='- Contacting API {1} with payload {0}...'.format(payload, url))
+        log(sev='debug', msg='- Contacting API via GET {1} with payload {0}...'.format(payload, url))
         resp = requests.get(url=url, verify=(not self.insecure_ssl), params=payload,
                             headers={'vmware-api-session-id': self.session_id})
-        if resp.status_code != 200:
-            log(sev='error', msg='Error! API responded with: {}'.format(resp.status_code))
-            return False, resp.text
-        return True, resp.json()
 
-    def post(self, path: str, payload: dict = None) -> (bool, dict or str):
+        if not resp.ok:
+            log(sev='error', msg='Error! API responded with: {}, content: {}'.format(resp.status_code, resp.text))
+            return False, resp.status_code, resp.text
+
+        # Check if we have a JSON response from GET request
+        json = "<unknown>"
+        if resp.text:
+            json = resp.json()
+        return True, resp.status_code, json
+
+    def post(self, path: str, payload: dict = None) -> (bool, int, dict or str):
         """
         Generic POST function to contact the vCenter API.
         :param path: The API endpoint to contact
@@ -86,12 +92,42 @@ class VCAPI:
             'vmware-api-session-id': self.session_id
         }
         url = 'https://{}/api/{}'.format(self.hostname, path)
-        log(sev='debug', msg='- Contacting API {1} with payload {0}...'.format(payload, url))
+        log(sev='debug', msg='- Contacting API {1} via POST with payload {0}...'.format(payload, url))
         resp = requests.post(url=url, verify=(not self.insecure_ssl), json=payload, headers=headers)
-        if resp.status_code != 200:
-            log(sev='error', msg='Error! API responded with: {}'.format(resp.status_code))
-            return False, resp.text
-        return True, resp.json()
+
+        if not resp.ok:
+            log(sev='error', msg='Error! API responded with: {}, content: {}'.format(resp.status_code, resp.text))
+            return False, resp.status_code, resp.text
+
+        # Check if we have a JSON response from POST request
+        json = "<unknown>"
+        if resp.text:
+            json = resp.json()
+        return True, resp.status_code, json
+
+    def delete(self, path: str, payload: dict = None) -> (bool, int, dict or str):
+        """
+        Generic DELETE function to contact the vCenter API for purpose of deleting stuff.
+        :param path: The API endpoint to contact
+        :param payload: The payload to send
+        :return: The JSON response from the API
+        """
+        headers = {
+            'content-type': 'application/json',
+            'vmware-api-session-id': self.session_id
+        }
+        url = 'https://{}/api/{}'.format(self.hostname, path)
+        log(sev='debug', msg='- Contacting API {1} via DELETE with payload {0}...'.format(payload, url))
+        resp = requests.delete(url=url, verify=(not self.insecure_ssl), json=payload, headers=headers)
+        if not resp.ok:
+            log(sev='error', msg='Error! API responded with: {}, content: {}'.format(resp.status_code, resp.text))
+            return False, resp.status_code, resp.text
+
+        # Check if we have a JSON response from POST request
+        json = "<unknown>"
+        if resp.text:
+            json = resp.json()
+        return True, resp.status_code, json
 
     # Login/Logout
     def login(self) -> bool:
@@ -137,7 +173,7 @@ class VCAPI:
         :param name: The name of the Content Library
         :return: The ID of the Content Library
         """
-        success, library_id = self.post(path='content/library?action=find', payload={'name': name, 'type': 'LOCAL'})
+        success, _, library_id = self.post(path='content/library?action=find', payload={'name': name, 'type': 'LOCAL'})
         if not success:
             return None
         if len(library_id) != 1:
@@ -154,7 +190,7 @@ class VCAPI:
         :return: The list of items in the Content Library
         """
         log(sev='debug', msg='Retrieving items in Content Library with ID {}...'.format(library_id))
-        success, output = self.get(path='content/library/item', payload={'library_id': library_id})
+        success, _, output = self.get(path='content/library/item', payload={'library_id': library_id})
         if not success:
             return None
         return output
@@ -166,22 +202,22 @@ class VCAPI:
         :return: The metadata for the Content Library item as dict
         """
         log(sev='debug', msg='Retrieving metadata for Content Library item {}...'.format(item_id))
-        success, output = self.get(path='content/library/item/{}'.format(item_id))
+        success, _, output = self.get(path='content/library/item/{}'.format(item_id))
         if not success:
             return None
         return output
 
-    def delete_library_item(self, item_id: str) -> bool or str:
+    def delete_library_item(self, item_id: str) -> (bool, str or None):
         """
         Delete a Content Library item.
         :param item_id: The ID of the Content Library item
-        :return: True if the deletion was successful, string otherwise
+        :return: True if the deletion was successful, int otherwise
         """
         log(sev='debug', msg='Deleting Content Library item {}...'.format(item_id))
-        success, output = self.post(path='content/library/item/{}/action/delete'.format(item_id), payload={})
-        if not success:
-            return output
-        return True
+        success, status_code, output = self.delete(path='content/library/item/{}'.format(item_id), payload={})
+        if status_code != 204:
+            return False, output
+        return True, None
 
     def get_cls_templates(self, library: str) -> dict or None:
         """
