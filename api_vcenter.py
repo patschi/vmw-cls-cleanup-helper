@@ -271,7 +271,7 @@ class VCAPI:
 
 
 # Wrapper
-def create(api_host, api_user, api_pass) -> VCAPI:
+def create(api_host, api_user, api_pass) -> VCAPI or None:
     """
     Wrapper function to create an instance of the VCAPI class.
     :param api_host: The hostname of the vCenter server
@@ -279,4 +279,8 @@ def create(api_host, api_user, api_pass) -> VCAPI:
     :param api_pass: The password to authenticate
     :return: An instance of the VCAPI class
     """
+    # Check if all required parameters are set
+    if not api_host or not api_user or not api_pass:
+        log(sev='error', msg='Missing required parameters for vCenter API! Cannot proceed.')
+        return None
     return VCAPI(hostname=api_host, username=api_user, password=api_pass)

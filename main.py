@@ -22,7 +22,11 @@ if '__main__' == __name__:
 
     # Create an instance of the vCenter API
     api = api_vcenter.create(api_host=api_host, api_user=api_user, api_pass=api_pass)
+    if api is None:
+        log(sev='error', msg='Failed to create an instance of the vCenter API. Exiting...')
+        exit(1)
     api.allow_insecure_ssl(insecure=True)
+
     try:
         login = api.login()
         if not login:
@@ -50,7 +54,7 @@ if '__main__' == __name__:
         # Delete the templates
         log(sev='info', msg='Deleting templates...')
         if dry_run:
-            log(sev='warn', msg='/!!\\ Dry-run enabled, not sending deletion API requests! /!!\\')
+            log(sev='warn', msg='/!!!\\ Dry-run enabled, not sending deletion API requests! /!!!\\')
 
         # Go through each template
         for template in templates:
