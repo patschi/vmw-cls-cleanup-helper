@@ -55,6 +55,7 @@ class VCAPI:
         """
         self.insecure_ssl = insecure
         if insecure:
+            log(sev='warn', msg='Insecure SSL connections are allowed. Self-signed certificates will be accepted.')
             urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
 
     # Generic API functions

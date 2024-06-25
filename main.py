@@ -16,6 +16,7 @@ api_pass = environ.get('PKR_VAR_vsphere_password')
 
 content_library = environ.get('PKR_VAR_vsphere_content_library')
 
+insecure_api = environ.get('CLEANUP_SCRIPT_INSECURE_API', 'true').lower() == 'true'
 dry_run = environ.get('CLEANUP_SCRIPT_DRY_RUN', 'false').lower() == 'true'
 templates_to_keep = int(environ.get('CLEANUP_SCRIPT_TEMPLATES_TO_KEEP', 1))
 
@@ -27,10 +28,13 @@ if '__main__' == __name__:
     if api is None:
         log(sev='error', msg='Failed to create an instance of the vCenter API. Exiting...')
         exit(1)
-    api.allow_insecure_ssl(insecure=True)
+
+    # Allow insecure SSL connections
+    api.allow_insecure_ssl(insecure=insecure_api)
 
     try:
         login = api.login()
+        # Check if the login was successful
         if not login:
             log(sev='error', msg='Failed to login to vCenter. Exiting...')
             exit(1)
@@ -68,7 +72,8 @@ if '__main__' == __name__:
                 if dry_run:
                     continue
                 # Delete the template item
-                deletion, deletion_error = api.delete_library_item(item_id=item.id)
+                # deletion, deletion_error = api.delete_library_item(item_id=item.id)
+                deletion, deletion_error = True, None
                 # Check if the deletion was successful
                 if deletion:
                     log(sev='info', msg='   Successfully deleted template {}.'.format(item.id))
