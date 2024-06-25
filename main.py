@@ -7,7 +7,7 @@ import cldata
 from logger import log, debug
 
 # Version
-VERSION = [1, 0, 1]
+VERSION = [1, 1, 0]
 
 # Settings
 # vCenter API
@@ -22,6 +22,8 @@ insecure_api = environ.get('PKR_VAR_vsphere_insecure_connection', 'true').lower(
 # Cleanup-specific settings
 dry_run = environ.get('CLEANUP_SCRIPT_DRY_RUN', 'false').lower() == 'true'
 templates_to_keep = int(environ.get('CLEANUP_SCRIPT_TEMPLATES_TO_KEEP', 1))
+if templates_to_keep < 1:
+    templates_to_keep = 1
 
 # Main code
 if '__main__' == __name__:
@@ -76,7 +78,7 @@ if '__main__' == __name__:
             # Delete the templates
             log(sev='info', msg='Deleting templates...')
             if dry_run:
-                log(sev='warn', msg='/!!!\\ Dry-run enabled, not sending deletion API requests! /!!!\\')
+                log(sev='warn', msg='/!\\ Dry-run enabled, not sending deletion API requests! /!\\')
 
             # Check if there are any templates to delete
             if len(templates) == 0:

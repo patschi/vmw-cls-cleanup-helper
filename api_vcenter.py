@@ -243,8 +243,9 @@ class VCAPI:
             log(sev='error', msg='Error! Error occurred while retrieving Content Library items.')
             return
 
-        if len(cl_items) == 0:
-            log(sev='debug', msg='No items found in Content Library.')
+        items_found = len(cl_items)
+        log(sev='debug', msg='Found {} items in Content Library.'.format(items_found))
+        if items_found == 0:
             return {}
 
         # Go through the items and get metadata for each

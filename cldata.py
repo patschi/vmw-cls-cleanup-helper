@@ -87,10 +87,9 @@ def templates_to_delete(templates: dict[str, list[CLTemplate]], keep: int) -> di
     # This is because the list is sorted by creation date, newest first.
     for name in templates:
         len_old = len(templates[name])
-        if len_old > keep:
-            del templates[name][:keep]
-            log(sev='info', msg=' Keeping {} templates for "{}" [before: {}, after: {}].'
-                .format(keep, name, len_old, len(templates[name])))
+        del templates[name][:keep]
+        log(sev='info', msg=' Keeping {} templates for "{}" [before: {}, after: {}].'
+            .format(keep, name, len_old, len(templates[name])))
 
     # Return the list of templates to delete
     return templates
