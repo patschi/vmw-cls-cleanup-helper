@@ -7,19 +7,23 @@ import cldata
 from logger import log, debug
 
 # Version
-VERSION = [0, 3, 1]
+VERSION = [0, 4, 0]
 
 # Settings
+# vCenter API
 api_host = environ.get('PKR_VAR_vsphere_endpoint')
 api_user = environ.get('PKR_VAR_vsphere_username')
 api_pass = environ.get('PKR_VAR_vsphere_password')
 
+# Generic settings from packer env
 content_library = environ.get('PKR_VAR_vsphere_content_library')
+insecure_api = environ.get('PKR_VAR_vsphere_insecure_connection', 'true').lower() == 'true'
 
-insecure_api = environ.get('CLEANUP_SCRIPT_INSECURE_API', 'true').lower() == 'true'
+# Cleanup-specific settings
 dry_run = environ.get('CLEANUP_SCRIPT_DRY_RUN', 'false').lower() == 'true'
 templates_to_keep = int(environ.get('CLEANUP_SCRIPT_TEMPLATES_TO_KEEP', 1))
 
+# Main code
 if '__main__' == __name__:
     log(sev='info', msg='Starting vmw-cls-cleanup {}...'.format('.'.join(map(str, VERSION))))
 

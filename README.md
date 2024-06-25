@@ -26,13 +26,13 @@ It requires below environment variables to be set.
 
 These values are CASE-SENSITIVE! Match them precisely as shown below.
 
-| ENV-Variable                     | Required | Default | Usage                                                  |
-|----------------------------------|----------|---------|--------------------------------------------------------|
-| PKR_VAR_vsphere_endpoint         | Yes      | None    | vCenter Hostname                                       |
-| PKR_VAR_vsphere_username         | Yes      | None    | vCenter Account Username (should be a service account) |
-| PKR_VAR_vsphere_password         | Yes      | None    | vCenter Account Password                               |
-| PKR_VAR_vsphere_content_library  | Yes      | None    | Name of the Content Library to clean up                |
-| CLEANUP_SCRIPT_TEMPLATES_TO_KEEP | No       | 1       | How many templates to keep                             |
-| CLEANUP_SCRIPT_INSECURE_API      | No       | True    | Allow self-signed certs when connecting to vCenter API |
-| CLEANUP_SCRIPT_DEBUG             | No       | False   | Enable debug logging                                   |
-| CLEANUP_SCRIPT_DRY_RUN           | No       | False   | Enable dry-run. Sends no deletion requests.            |
+| ENV-Variable                        | Required | Default | Usage                                                  |
+|-------------------------------------|----------|---------|--------------------------------------------------------|
+| PKR_VAR_vsphere_endpoint            | Yes      | None    | vCenter Hostname                                       |
+| PKR_VAR_vsphere_username            | Yes      | None    | vCenter Account Username (should be a service account) |
+| PKR_VAR_vsphere_password            | Yes      | None    | vCenter Account Password                               |
+| PKR_VAR_vsphere_content_library     | Yes      | None    | Name of the Content Library to clean up                |
+| PKR_VAR_vsphere_insecure_connection | No       | True    | Allow self-signed certs when connecting to vCenter API |
+| CLEANUP_SCRIPT_TEMPLATES_TO_KEEP    | No       | 1       | How many templates to keep                             |
+| CLEANUP_SCRIPT_DEBUG                | No       | False   | Enable debug logging                                   |
+| CLEANUP_SCRIPT_DRY_RUN              | No       | False   | Enable dry-run. Sends no deletion requests.            |
