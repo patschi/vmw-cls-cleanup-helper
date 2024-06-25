@@ -52,7 +52,7 @@ if '__main__' == __name__:
         templates = cldata.convert(templates=templates)
         # Output all templates if debug is enabled
         if debug:
-            log(sev='debug', msg='Final data:')
+            log(sev='debug', msg='Final data of all existing templates:')
             cldata.print_list(templates=templates)
 
         # Output the templates to be deleted, if debug is enabled
@@ -84,9 +84,6 @@ if '__main__' == __name__:
                 else:
                     log(sev='warn', msg='   Error occurred while deleting template {}: {}.'
                         .format(item.id, deletion_error))
-
-                ### TEST ONLY ###
-                raise Exception('ONE TEMPLATE DELETED - TEST END')
 
         # We're done! Templates cleaned up.
         log(sev='info', msg='Finished cleaning up templates.')
