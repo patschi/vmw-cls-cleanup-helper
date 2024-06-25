@@ -15,7 +15,9 @@ api_user = environ.get('PKR_VAR_vsphere_username')
 api_pass = environ.get('PKR_VAR_vsphere_password')
 
 content_library = environ.get('PKR_VAR_vsphere_content_library')
-dry_run = environ.get('CLEANUP_SCRIPT_DEBUG_DRY_RUN', 'false').lower() == 'true'
+
+dry_run = environ.get('CLEANUP_SCRIPT_DRY_RUN', 'false').lower() == 'true'
+templates_to_keep = int(environ.get('CLEANUP_SCRIPT_TEMPLATES_TO_KEEP', 1))
 
 if '__main__' == __name__:
     log(sev='info', msg='Starting vmw-cls-cleanup {}...'.format('.'.join(map(str, VERSION))))
@@ -46,7 +48,7 @@ if '__main__' == __name__:
             cldata.print_list(templates=templates)
 
         # Output the templates to be deleted, if debug is enabled
-        templates = cldata.templates_to_delete(templates=templates, keep=1)
+        templates = cldata.templates_to_delete(templates=templates, keep=templates_to_keep)
         if debug:
             log(sev='debug', msg='Final data for templates to be deleted:')
             cldata.print_list(templates=templates)
