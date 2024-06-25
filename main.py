@@ -7,7 +7,7 @@ import cldata
 from logger import log, debug
 
 # Version
-VERSION = [0, 4, 0]
+VERSION = [1, 0, 0]
 
 # Settings
 # vCenter API
