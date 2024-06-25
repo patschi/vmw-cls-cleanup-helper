@@ -244,8 +244,8 @@ class VCAPI:
             return
 
         if len(cl_items) == 0:
-            log(sev='error', msg='No items found in Content Library.')
-            return
+            log(sev='debug', msg='No items found in Content Library.')
+            return {}
 
         # Go through the items and get metadata for each
         cls_templates = {}

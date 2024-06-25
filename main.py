@@ -7,7 +7,7 @@ import cldata
 from logger import log, debug
 
 # Version
-VERSION = [1, 0, 0]
+VERSION = [1, 0, 1]
 
 # Settings
 # vCenter API
@@ -36,7 +36,11 @@ if '__main__' == __name__:
     # Allow insecure SSL connections
     api.allow_insecure_ssl(insecure=insecure_api)
 
+    # By default, continue with cleanup
+    cleanup = True
+
     try:
+        # Login to vCenter
         login = api.login()
         # Check if the login was successful
         if not login:
@@ -47,43 +51,55 @@ if '__main__' == __name__:
         templates = api.get_cls_templates(library=content_library)
         if templates is None:
             log(sev='error', msg='Error occurred while retrieving Content Library templates.')
+            cleanup = False
+        if len(templates) == 0:
+            log(sev='warn', msg='No templates found in the Content Library. Ending...')
+            cleanup = False
 
-        # Use templates_data to convert the templates further
-        templates = cldata.convert(templates=templates)
-        # Output all templates if debug is enabled
-        if debug:
-            log(sev='debug', msg='Final data of all existing templates:')
-            cldata.print_list(templates=templates)
+        # Continue with cleanup
+        if cleanup:
 
-        # Output the templates to be deleted, if debug is enabled
-        templates = cldata.templates_to_delete(templates=templates, keep=templates_to_keep)
-        if debug:
-            log(sev='debug', msg='Final data for templates to be deleted:')
-            cldata.print_list(templates=templates)
+            # Use templates_data to convert the templates further
+            templates = cldata.convert(templates=templates)
+            # Output all templates if debug is enabled
+            if debug:
+                log(sev='debug', msg='Final data of all existing templates:')
+                cldata.print_list(templates=templates)
 
-        # Delete the templates
-        log(sev='info', msg='Deleting templates...')
-        if dry_run:
-            log(sev='warn', msg='/!!!\\ Dry-run enabled, not sending deletion API requests! /!!!\\')
+            # Check for the templates to delete
+            templates = cldata.templates_to_delete(templates=templates, keep=templates_to_keep)
+            # Output the templates to be deleted, if debug is enabled
+            if debug:
+                log(sev='debug', msg='Final data for templates to be deleted:')
+                cldata.print_list(templates=templates)
 
-        # Go through each template
-        for template in templates:
-            log(sev='info', msg=' Cleaning up template "{}"...'.format(template))
-            # Go through each item per template type and delete it
-            for item in templates[template]:
-                log(sev='info', msg='  Deleting template "{}" with ID {}...'.format(item.name, item.id))
-                # Skip deletion if dry-run is enabled
-                if dry_run:
-                    continue
-                # Delete the template item
-                deletion, deletion_error = api.delete_library_item(item_id=item.id)
-                # deletion, deletion_error = True, None
-                # Check if the deletion was successful
-                if deletion:
-                    log(sev='info', msg='   Successfully deleted template {}.'.format(item.id))
-                else:
-                    log(sev='warn', msg='   Error occurred while deleting template {}: {}.'
-                        .format(item.id, deletion_error))
+            # Delete the templates
+            log(sev='info', msg='Deleting templates...')
+            if dry_run:
+                log(sev='warn', msg='/!!!\\ Dry-run enabled, not sending deletion API requests! /!!!\\')
+
+            # Check if there are any templates to delete
+            if len(templates) == 0:
+                log(sev='warn', msg='No templates to delete.')
+            else:
+                # Go through each template type and delete the templates
+                for template in templates:
+                    log(sev='info', msg=' Cleaning up template "{}"...'.format(template))
+                    # Go through each item per template type and delete it
+                    for item in templates[template]:
+                        log(sev='info', msg='  Deleting template "{}" with ID {}...'.format(item.name, item.id))
+                        # Skip deletion if dry-run is enabled
+                        if dry_run:
+                            continue
+                        # Delete the template item
+                        deletion, deletion_error = api.delete_library_item(item_id=item.id)
+                        # deletion, deletion_error = True, None
+                        # Check if the deletion was successful
+                        if deletion:
+                            log(sev='info', msg='   Successfully deleted template {}.'.format(item.id))
+                        else:
+                            log(sev='warn', msg='   Error occurred while deleting template {}: {}.'
+                                .format(item.id, deletion_error))
 
         # We're done! Templates cleaned up.
         log(sev='info', msg='Finished cleaning up templates.')
