@@ -261,18 +261,19 @@ class VCAPI:
 
         # Go through the items and get metadata for each
         cls_templates = {}
-        for item in cl_items:
-            log(sev='debug', msg=' Library-Item: {}'.format(item))
+        for item_id in cl_items:
+            log(sev='debug', msg=' Library-Item: {}'.format(item_id))
 
-            metadata = self.get_library_item_metadata(item_id=item)
+            metadata = self.get_library_item_metadata(item_id=item_id)
             if metadata is None:
-                log(sev='warning', msg='Error! Could not retrieve metadata for item {}. Skipping...'.format(item))
+                log(sev='warning', msg='Error! Could not retrieve metadata for item {}. Skipping...'.format(item_id))
                 continue
 
-            # Convert some metadata to datetime objects
-            metadata['creation_time'] = datetime.fromisoformat(metadata['creation_time'].replace('Z', '+00:00'))
-            metadata['last_modified_time'] = datetime.fromisoformat(
-                metadata['last_modified_time'].replace('Z', '+00:00'))
+            # We can only process type=vm-template items
+            cl_type = metadata.get('type', '')
+            if cl_type != 'vm-template':
+                log(sev='info', msg='  Skipping item {}, type ({}) is not vm-template.'.format(item_id, cl_type))
+                continue
 
             metadata['creation_time'] = self._parse_iso_datetime_utc(metadata['creation_time'])
             metadata['last_modified_time'] = self._parse_iso_datetime_utc(metadata['last_modified_time'])
