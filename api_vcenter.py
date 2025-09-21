@@ -278,8 +278,14 @@ class VCAPI:
             metadata['last_modified_time'] = self._parse_iso_datetime_utc(metadata['last_modified_time'])
 
             # Create a CLTemplate object from the metadata
-            metadata = CLTemplate(**metadata)
-            cls_templates[item] = metadata
+            try:
+                metadata = CLTemplate(**metadata)
+            except TypeError as e:
+                log(sev='warning', msg='Error! Could not initialize item {}: {}. Skipping...'.format(item_id, e))
+                continue
+
+            # Store the template in the dict
+            cls_templates[item_id] = metadata
             log(sev='debug', msg='  Name: {} / CreationTime: {}'
                 .format(metadata.name, metadata.creation_time))
 
