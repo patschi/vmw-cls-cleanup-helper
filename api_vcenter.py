@@ -5,6 +5,7 @@ from datetime import datetime
 import requests
 import urllib3.exceptions
 
+from typing import Tuple, Optional, Union
 from logger import log
 
 
@@ -59,7 +60,7 @@ class VCAPI:
             urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
 
     # Generic API functions
-    def get(self, path: str, payload: dict = None) -> (bool, int, dict or str):
+    def get(self, path: str, payload: dict = None) -> Tuple[bool, int, Union[dict, str]]:
         """
         Generic GET function to contact the vCenter API.
         :param path: The API endpoint to contact
@@ -81,7 +82,7 @@ class VCAPI:
             json = resp.json()
         return True, resp.status_code, json
 
-    def post(self, path: str, payload: dict = None) -> (bool, int, dict or str):
+    def post(self, path: str, payload: dict = None) -> Tuple[bool, int, Union[dict, str]]:
         """
         Generic POST function to contact the vCenter API.
         :param path: The API endpoint to contact
@@ -106,7 +107,7 @@ class VCAPI:
             json = resp.json()
         return True, resp.status_code, json
 
-    def delete(self, path: str, payload: dict = None) -> (bool, int, dict or str):
+    def delete(self, path: str, payload: dict = None) -> Tuple[bool, int, Union[dict, str]]:
         """
         Generic DELETE function to contact the vCenter API for purpose of deleting stuff.
         :param path: The API endpoint to contact
@@ -168,7 +169,7 @@ class VCAPI:
         return True
 
     # Content Library-specific functions for vCenter
-    def get_library_id(self, name: str) -> str or None:
+    def get_library_id(self, name: str) -> Optional[str]:
         """
         Get the ID of a Content Library by its name.
         :param name: The name of the Content Library
@@ -184,7 +185,7 @@ class VCAPI:
         # We have only one match, so easy to pick the right one
         return library_id[0]
 
-    def get_library_items(self, library_id: str) -> dict or None:
+    def get_library_items(self, library_id: str) -> Optional[dict]:
         """
         Get all items in a Content Library.
         :param library_id: The ID of the Content Library
@@ -196,7 +197,7 @@ class VCAPI:
             return None
         return output
 
-    def get_library_item_metadata(self, item_id: str) -> dict or None:
+    def get_library_item_metadata(self, item_id: str) -> Optional[dict]:
         """
         Get metadata for a Content Library item. Like creation time, etc.
         :param item_id: The ID of the Content
@@ -208,7 +209,7 @@ class VCAPI:
             return None
         return output
 
-    def delete_library_item(self, item_id: str) -> (bool, str or None):
+    def delete_library_item(self, item_id: str) -> Tuple[bool, Optional[str]]:
         """
         Delete a Content Library item.
         :param item_id: The ID of the Content Library item
@@ -220,7 +221,7 @@ class VCAPI:
             return False, output
         return True, None
 
-    def get_cls_templates(self, library: str) -> dict or None:
+    def get_cls_templates(self, library: str) -> Optional[dict]:
         """
         The main cleanup function. This function will go through the Content Library and delete all outdated items.
         :param library: The name of the Content Library
@@ -273,7 +274,7 @@ class VCAPI:
 
 
 # Wrapper
-def create(api_host, api_user, api_pass) -> VCAPI or None:
+def create(api_host, api_user, api_pass) -> Optional[VCAPI]:
     """
     Wrapper function to create an instance of the VCAPI class.
     :param api_host: The hostname of the vCenter server
