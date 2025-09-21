@@ -47,6 +47,16 @@ class VCAPI:
         self.session_id = None
         self.insecure_ssl = False
 
+    # Helper functions
+    @staticmethod
+    def _parse_iso_datetime_utc(date_str: str) -> datetime:
+        """
+        Helper function to parse an ISO 8601 datetime string in UTC format.
+        :param date_str: The ISO 8601 datetime string
+        :return: The parsed datetime object
+        """
+        return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+
     # General functions
     def allow_insecure_ssl(self, insecure: bool) -> None:
         """
@@ -165,7 +175,7 @@ class VCAPI:
                 .format(resp.status_code, resp.text))
             return False
 
-        log(sev='debug', msg=' Logged out from vCenter.')
+        log(sev='debug', msg='Logged out from vCenter.')
         return True
 
     # Content Library-specific functions for vCenter
@@ -263,6 +273,9 @@ class VCAPI:
             metadata['creation_time'] = datetime.fromisoformat(metadata['creation_time'].replace('Z', '+00:00'))
             metadata['last_modified_time'] = datetime.fromisoformat(
                 metadata['last_modified_time'].replace('Z', '+00:00'))
+
+            metadata['creation_time'] = self._parse_iso_datetime_utc(metadata['creation_time'])
+            metadata['last_modified_time'] = self._parse_iso_datetime_utc(metadata['last_modified_time'])
 
             # Create a CLTemplate object from the metadata
             metadata = CLTemplate(**metadata)
